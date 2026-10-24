@@ -1,0 +1,1 @@
+const venues=[{name:'Paytey',city:'Bengaluru',type:'Café / Live Music',note:'Add your MANZAR show photos and Reel here.'},{name:'AEIOU',city:'Bengaluru',type:'Pub / Live Entertainment',note:'Add your MANZAR show photos and Reel here.'},{name:"Jolly Johnny's",city:'Bengaluru',type:'Bar / Live Music',note:'Add your MANZAR show photos and Reel here.'}];

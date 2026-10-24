@@ -1,0 +1,18 @@
+[
+  {
+    "id": "paytey-live",
+    "title": "MANZAR LIVE",
+    "venue": "Paytey - Naati Kitchen and Bar",
+    "city": "Bengaluru",
+    "address": "Add venue address in admin",
+    "date": "2026-10-24",
+    "time": "20:30",
+    "endTime": "22:00",
+    "capacity": 80,
+    "status": "draft",
+    "featured": true,
+    "poster": "",
+    "description": "A high-energy MANZAR night in Bengaluru.",
+    "notes": "Free seat requests are subject to venue confirmation."
+  }
+]
