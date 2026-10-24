@@ -26,7 +26,7 @@ exports.handler = async event => {
   try {
     const normalized = shows.map(normalizeShow);
     if (new Set(normalized.map(s => s.id)).size !== normalized.length) throw new Error('Every show must have a unique ID.');
-    const path = 'data/shows.json';
+    const path = 'MANZAR_Band_HQ 4/data/shows.json';
     const headers = { Authorization: `Bearer ${GITHUB_TOKEN}`, Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', 'User-Agent': 'MANZAR-Netlify-Publisher' };
     const existing = await fetch(`${API}/repos/${encodeURIComponent(GITHUB_OWNER)}/${encodeURIComponent(GITHUB_REPO)}/contents/${path}?ref=${encodeURIComponent(GITHUB_BRANCH)}`, { headers });
     let sha;
