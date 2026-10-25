@@ -22,10 +22,24 @@ const editURL="https://github.com/azharpasha5119-alt/manzar-band-website/edit/ma
 let shows=[],selected=-1;const $=id=>document.getElementById(id);
 function norm(s){return {id:s.id||"show-"+Date.now()+"-"+Math.random().toString(36).slice(2,7),title:s.title||"",venue:s.venue||"",city:s.city||"",date:s.date||"",time:s.time||"",endTime:s.endTime||s.end_time||"",status:s.status||"draft",capacity:s.capacity??0,featured:!!s.featured,poster:s.poster||s.posterUrl||s.image||"",description:s.description||"",notes:s.notes||""}}
 function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function dateVal(v){if(!v)return"";if(/^\d{4}-\d\d-\d\d$/.test(v))return v;let d=new Date(v);return isNaN(d)? "":${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}}
+function dateVal(v) {
+  if (!v) return "";
+  if (/^\d{4}-\d\d-\d\d$/.test(v)) return v;
+  let d = new Date(v);
+  return isNaN(d) ? "" : `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+}
 function timeVal(v){if(!v)return"";let m=String(v).match(/(\d{1,2}):(\d\d)\s*(AM|PM)?/i);if(!m)return"";let h=+m[1],ap=(m[3]||"").toUpperCase();if(ap==="PM"&&h<12)h+=12;if(ap==="AM"&&h===12)h=0;return String(h).padStart(2,"0")+":"+m[2]}
 async function load(){try{let r=await fetch("./data/shows.json",{cache:"no-store"});if(!r.ok)throw Error("HTTP "+r.status);let d=await r.json();shows=(Array.isArray(d)?d:Array.isArray(d.shows)?d.shows:[]).map(norm);selected=shows.length?0:-1;render();if(selected>=0)select(selected);else blank()}catch(e){$("list").innerHTML='<div class="empty">Could not load data/shows.json. Check that GitHub Pages is deployed and the file exists.</div>';shows=[];blank()}}
-function render(){$("count").textContent="("+shows.length+")";$("list").innerHTML=shows.length?shows.map((s,i)=><button class="item ${i===selected?"active":""}" data-i="${i}"><b>${esc(s.title||"Untitled show")}</b><br><small>${esc(s.venue)} · ${esc(s.date)} · ${esc(s.status)}</small></button>).join(""):'<div class="empty">No shows yet.</div>';document.querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>select(+b.dataset.i))}
+function render() {
+  $("count").textContent = "(" + shows.length + ")";
+  $("list").innerHTML = shows.length
+    ? shows.map((s, i) => `<button class="item ${i === selected ? "active" : ""}" data-i="${i}"><b>${esc(s.title || "Untitled show")}</b><br><small>${esc(s.venue)} · ${esc(s.date)} · ${esc(s.status)}</small></button>`).join("")
+    : '<div class="empty">No shows yet.</div>';
+
+  document.querySelectorAll("[data-i]").forEach(b => {
+    b.onclick = () => select(+b.dataset.i);
+  });
+}
 function blank(){$("empty").hidden=false;$("form").hidden=true}
 function select(i){selected=i;render();let s=shows[i];if(!s)return blank();$("empty").hidden=true;$("form").hidden=false;$("heading").textContent=s.title||"Edit show";for(let k of ["title","venue","city","status","capacity","featured","poster","description","notes"])$(k).value=k==="featured"?String(!!s[k]):(s[k]??"");$("date").value=dateVal(s.date);$("time").value=timeVal(s.time);$("endTime").value=timeVal(s.endTime);$("message").textContent="";preview()}
 function preview(){let u=$("poster").value.trim();$("posterImg").hidden=!u;$("posterImg").src=u;$("posterHint").textContent=u?u:"Add a poster URL to preview it."}
