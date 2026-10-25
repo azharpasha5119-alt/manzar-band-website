@@ -1,39 +1,99 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>MANZAR Admin</title>
-<style>
-:root{color-scheme:dark;--bg:#0b0b10;--panel:#171720;--line:#30303d;--text:#f6f4fb;--muted:#aaa7bb;--accent:#d7ff64}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font:15px/1.5 system-ui,sans-serif}header{padding:22px 5%;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}.logo{font-size:24px;font-weight:900;letter-spacing:.2em}.logo span{color:var(--accent)}main{max-width:1150px;margin:auto;padding:28px 5%}h1{font-size:clamp(28px,4vw,42px);margin:8px 0}.muted,small{color:var(--muted)}.notice,.panel{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:18px;margin:18px 0}.layout{display:grid;grid-template-columns:.8fr 1.4fr;gap:18px}.list{display:grid;gap:9px}.item{background:#22222e;color:var(--text);border:1px solid var(--line);padding:12px;border-radius:10px;text-align:left;cursor:pointer}.item.active{border-color:var(--accent)}label{display:block;font-size:12px;color:var(--muted);margin:0 0 5px}input,textarea,select{width:100%;padding:11px;background:#0d0d14;color:var(--text);border:1px solid #38384b;border-radius:8px;font:inherit}textarea{min-height:85px}.fields{display:grid;grid-template-columns:1fr 1fr;gap:12px}.full{grid-column:1/-1}.btn{border:1px solid var(--line);border-radius:9px;padding:10px 13px;background:#252535;color:var(--text);font:inherit;cursor:pointer;text-decoration:none;display:inline-block}.primary{background:var(--accent);color:#111;border-color:var(--accent);font-weight:800}.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:15px}.preview{display:flex;gap:12px;align-items:center;margin-top:14px}.preview img{width:85px;height:110px;object-fit:cover;border-radius:8px}.empty{color:var(--muted);padding:18px;text-align:center;border:1px dashed var(--line);border-radius:10px}#message{color:var(--accent);margin-top:10px;font-size:13px}@media(max-width:760px){.layout,.fields{grid-template-columns:1fr}.full{grid-column:auto}}
-</style></head><body>
-<header><div><div class="logo">MANZAR<span>.</span></div><small>SHOW MANAGER · ADMIN</small></div><a class="btn" href="./index.html">View public site ↗</a></header>
-<main><div><small>BEHIND THE MUSIC</small><h1>Manage your shows.</h1><div class="muted">Edit event details and prepare your changes for GitHub.</div></div>
-<div class="notice"><b>GitHub-only publishing:</b> this dashboard changes data in your browser only. Click Download shows.json, then replace the contents of <code>MANZAR_Band_HQ 4/data/shows.json</code> in GitHub and commit. No token is stored here.</div>
-<div class="layout"><section class="panel"><h2>Your shows <small id="count"></small></h2><div class="list" id="list"><div class="empty">Loading…</div></div><div class="actions"><button class="btn primary" id="add">＋ Add show</button><button class="btn" id="download">Download shows.json</button></div></section>
-<section class="panel"><h2 id="heading">Show details</h2><div id="empty" class="empty">Select a show or click Add show.</div>
-<form id="form" hidden><div class="fields">
-<div class="full"><label>Show title *</label><input id="title" required></div><div><label>Venue *</label><input id="venue" required></div><div><label>City</label><input id="city"></div>
-<div><label>Date *</label><input id="date" type="date" required></div><div><label>Start time</label><input id="time" type="time"></div><div><label>End time</label><input id="endTime" type="time"></div><div><label>Status</label><select id="status"><option>draft</option><option>upcoming</option><option>published</option><option>cancelled</option><option>completed</option></select></div>
-<div><label>Capacity</label><input id="capacity" type="number" min="0"></div><div><label>Featured</label><select id="featured"><option value="false">No</option><option value="true">Yes</option></select></div>
-<div class="full"><label>Poster image URL</label><input id="poster" type="url" placeholder="https://..."></div><div class="full"><label>Description</label><textarea id="description"></textarea></div><div class="full"><label>Booking notes</label><textarea id="notes"></textarea></div></div>
-<div class="preview"><img id="posterImg" alt="Poster preview" hidden><small id="posterHint">Add a poster URL to preview it.</small></div>
-<div class="actions"><button class="btn primary" type="submit">Save in dashboard</button><button class="btn" type="button" id="discard">Discard changes</button><button class="btn" type="button" id="delete">Delete show</button></div><div id="message"></div></form></section></div>
-<p><small>Security: this static dashboard has no login protection and cannot write to GitHub directly. Repository commits still require your GitHub account.</small></p></main>
-<script>
-const editURL="https://github.com/azharpasha5119-alt/manzar-band-website/edit/main/MANZAR_Band_HQ%204/data/shows.json";
-let shows=[],selected=-1;const $=id=>document.getElementById(id);
-function norm(s){return {id:s.id||"show-"+Date.now()+"-"+Math.random().toString(36).slice(2,7),title:s.title||"",venue:s.venue||"",city:s.city||"",date:s.date||"",time:s.time||"",endTime:s.endTime||s.end_time||"",status:s.status||"draft",capacity:s.capacity??0,featured:!!s.featured,poster:s.poster||s.posterUrl||s.image||"",description:s.description||"",notes:s.notes||""}}
-function esc(s){return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
-function dateVal(v){if(!v)return"";if(/^\d{4}-\d\d-\d\d$/.test(v))return v;let d=new Date(v);return isNaN(d)? "":`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`}
-function timeVal(v){if(!v)return"";let m=String(v).match(/(\d{1,2}):(\d\d)\s*(AM|PM)?/i);if(!m)return"";let h=+m[1],ap=(m[3]||"").toUpperCase();if(ap==="PM"&&h<12)h+=12;if(ap==="AM"&&h===12)h=0;return String(h).padStart(2,"0")+":"+m[2]}
-async function load(){try{let r=await fetch("./data/shows.json",{cache:"no-store"});if(!r.ok)throw Error("HTTP "+r.status);let d=await r.json();shows=(Array.isArray(d)?d:Array.isArray(d.shows)?d.shows:[]).map(norm);selected=shows.length?0:-1;render();if(selected>=0)select(selected);else blank()}catch(e){$("list").innerHTML='<div class="empty">Could not load data/shows.json. Check that GitHub Pages is deployed and the file exists.</div>';shows=[];blank()}}
-function render(){$("count").textContent="("+shows.length+")";$("list").innerHTML=shows.length?shows.map((s,i)=>`<button class="item ${i===selected?"active":""}" data-i="${i}"><b>${esc(s.title||"Untitled show")}</b><br><small>${esc(s.venue)} · ${esc(s.date)} · ${esc(s.status)}</small></button>`).join(""):'<div class="empty">No shows yet.</div>';document.querySelectorAll("[data-i]").forEach(b=>b.onclick=()=>select(+b.dataset.i))}
-function blank(){$("empty").hidden=false;$("form").hidden=true}
-function select(i){selected=i;render();let s=shows[i];if(!s)return blank();$("empty").hidden=true;$("form").hidden=false;$("heading").textContent=s.title||"Edit show";for(let k of ["title","venue","city","status","capacity","featured","poster","description","notes"])$(k).value=k==="featured"?String(!!s[k]):(s[k]??"");$("date").value=dateVal(s.date);$("time").value=timeVal(s.time);$("endTime").value=timeVal(s.endTime);$("message").textContent="";preview()}
-function preview(){let u=$("poster").value.trim();$("posterImg").hidden=!u;$("posterImg").src=u;$("posterHint").textContent=u?u:"Add a poster URL to preview it."}
-$("poster").oninput=preview;
-$("form").onsubmit=e=>{e.preventDefault();if(selected<0)return;let s=shows[selected];for(let k of ["title","venue","city","date","time","endTime","status","poster","description","notes"])s[k]=$(k).value.trim();s.capacity=+$("capacity").value||0;s.featured=$("featured").value==="true";$("message").textContent="Saved in this dashboard. Download shows.json to prepare your GitHub update."; $("heading").textContent=s.title;render()};
-$("add").onclick=()=>{shows.push(norm({title:"",status:"draft"}));selected=shows.length-1;render();select(selected);$("date").value="";$("time").value="";$("endTime").value=""};
-$("discard").onclick=()=>{if(selected>=0)select(selected)};
-$("delete").onclick=()=>{if(selected<0||!confirm("Delete this show from the dashboard?"))return;shows.splice(selected,1);selected=shows.length?Math.min(selected,shows.length-1):-1;render();selected>=0?select(selected):blank()};
-$("download").onclick=()=>{let blob=new Blob([JSON.stringify(shows,null,2)+"\n"],{type:"application/json"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="shows.json";a.click();URL.revokeObjectURL(url);if(confirm("Downloaded shows.json. Open the GitHub file editor to publish it?"))window.open(editURL,"_blank","noopener")};
-load();
-</script></body></html>
+
+const repo = "azharpasha5119-alt/manzar-band-website";
+const filePath = "MANZAR_Band_HQ 4/data/shows.json";
+
+$("publish").onclick = async () => {
+  const token = $("githubToken").value.trim();
+
+  if (!token) {
+    alert("Please enter your GitHub token first.");
+    $("githubToken").focus();
+    return;
+  }
+
+  const button = $("publish");
+  button.disabled = true;
+  button.textContent = "Publishing...";
+  $("message").textContent = "";
+
+  try {
+    const apiURL =
+      `https://api.github.com/repos/${repo}/contents/${encodeURIComponent(filePath).replaceAll("%2F", "/")}`;
+
+    const headers = {
+      "Accept": "application/vnd.github+json",
+      "Authorization": `Bearer ${token}`,
+      "X-GitHub-Api-Version": "2022-11-28"
+    };
+
+    // Read the current file SHA required by GitHub.
+    const current = await fetch(`${apiURL}?ref=main`, { headers });
+    if (!current.ok) {
+      throw new Error(
+        current.status === 401 || current.status === 403
+          ? "Token invalid, expired, or missing repository permissions."
+          : `Could not read GitHub file (${current.status}).`
+      );
+    }
+
+    const file = await current.json();
+    const content = JSON.stringify(shows, null, 2) + "\n";
+
+    // Encode UTF-8 safely, including non-English show details.
+    const bytes = new TextEncoder().encode(content);
+    let binary = "";
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+
+    const response = await fetch(apiURL, {
+      method: "PUT",
+      headers: {
+        ...headers,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        message: "Update MANZAR show details",
+        content: btoa(binary),
+        sha: file.sha,
+        branch: "main"
+      })
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        result.message || `GitHub save failed (${response.status}).`
+      );
+    }
+
+    $("message").textContent =
+      "Successfully saved to GitHub! Your website will update after deployment.";
+
+    $("githubToken").value = "";
+  } catch (error) {
+    $("message").textContent = "Save failed: " + error.message;
+  } finally {
+    button.disabled = false;
+    button.textContent = "Save directly to GitHub";
+  }
+};
+
+$("download").onclick = () => {
+  const blob = new Blob(
+    [JSON.stringify(shows, null, 2) + "\n"],
+    { type: "application/json" }
+  );
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "shows.json";
+  a.click();
+  URL.revokeObjectURL(url);
+
+  if (confirm("Downloaded shows.json. Open GitHub to publish it manually?")) {
+    window.open(editURL, "_blank", "noopener");
+  }
+};
